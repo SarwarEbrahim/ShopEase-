@@ -75,7 +75,7 @@ Sign up allows choosing `customer` or `seller`. The `admin` role cannot be self-
 |---|---|
 | customer | `product:read`, `order:create`, `order:read`, `profile:write` |
 | seller | `product:read`, `product:write`, `order:read`, `order:update`, `profile:write` |
-| admin | all scopes, plus `user:manage` and `stats:read` |
+| admin | `product:read`, `product:write`, `order:read`, `order:update`, `user:manage`, `stats:read`, `profile:write` |
 
 ### 3.2 Use Case Diagrams
 **MVP** (no login, open endpoints):
