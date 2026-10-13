@@ -1,5 +1,8 @@
 # ShopEase - Product Requirements Document (PRD)
 
+
+Every item in this document is marked **MVP** or **Beta**.
+
 ## Product Vision
 Enable customers to buy, sellers to sell and admins to oversee the store through a simple, secure and role-based e-commerce platform built on clear REST APIs.
 
@@ -13,9 +16,8 @@ Small sellers need an easy way to list products online and customers need an eas
 | PG-02 | Customers find products easily | Search and filter respond in <= 500 ms with 100 products | MVP |
 | PG-03 | The system runs in production | Live Vercel URL; CRUD works on Supabase PostgreSQL | MVP |
 | PG-04 | Access is secure | 100% of protected endpoints return 401/403 without a valid token or role | Beta |
-| PG-05 | Customers complete a purchase | Browse → cart → order → status works end to end in the demo | Beta |
+| PG-05 | Customers can buy | A customer can place an order and see its status in the demo | Beta |
 | PG-06 | Admins control misuse | 100% of login attempts by a banned user are rejected | Beta |
-| PG-07 | Basic security practices are followed | No plain-text passwords; no secrets in Git | Beta |
 
 ## SMART Requirement Writing Standard
 All requirements in this product follow SMART criteria.
@@ -25,31 +27,31 @@ All requirements in this product follow SMART criteria.
 | Specific | Each requirement names the actor, the action and the system outcome |
 | Measurable | Each major outcome has a KPI, status code or testable acceptance criterion |
 | Achievable | Scope is limited to what the team can finish this semester |
-| Relevant | Each requirement maps to a goal (PG-01..PG-07) |
+| Relevant | Each requirement maps to a goal (PG-01..PG-06) |
 | Timely | Each requirement is assigned to MVP (mid-term) or Beta (final) |
 
 ## MoSCoW Prioritization
 | Category | Definition | ShopEase Usage |
 |---|---|---|
-| Must Have | Non-negotiable for the release | Product CRUD, login, RBAC, cart and orders |
+| Must Have | Non-negotiable for the release | Product CRUD, login, RBAC, place order |
 | Should Have | Important, can slip if time is short | Search and filter, profile, admin statistics, ban and unban |
 | Could Have | Added only if time remains | Product image upload |
-| Won't Have (this semester) | Explicitly out of scope | Payment gateway, reviews, coupons, automated tests, CI/CD |
+| Won't Have (this semester) | Explicitly out of scope | Cart, payment gateway, reviews, coupons, automated tests, CI/CD |
 
 ## Target Users
 | User | Description | Release |
 |---|---|---|
-| Customer | Browses products, manages a cart, places and tracks orders | MVP (browsing, no login), Beta (cart, orders) |
-| Seller | Lists and manages own products, handles orders for them | MVP (product management, no login), Beta (own products only, orders) |
-| Admin | Manages users and monitors the platform | Beta |
+| Customer | Browses products, places orders, tracks order status | MVP (browsing, no login), Beta (orders) |
+| Seller | Manages own products and the orders for them | MVP (product management, no login), Beta (own products only, orders) |
+| Admin | Manages users and views platform statistics | Beta |
 
 In the MVP there is no login, so product endpoints are open. Roles apply from Beta.
 
 ## Release Plan
 | Release | Demo | Focus |
 |---|---|---|
-| MVP | Mid-term | Core product features through REST APIs (CRUD), running locally and deployed on Vercel |
-| Beta | Final | Authentication, RBAC, security scopes, profile, cart and orders, admin dashboard, security hardening |
+| MVP | Mid-term | Product CRUD through REST APIs, running locally and deployed on Vercel |
+| Beta | Final | Authentication, RBAC, security scopes, profile, orders, admin dashboard, ban and unban |
 
 ```mermaid
 flowchart LR
@@ -57,10 +59,9 @@ flowchart LR
     B --> C[MVP: React frontend + Vercel deploy]
     C --> D{{Mid-term demo}}
     D --> E[Beta: Auth + Profile]
-    E --> F[Beta: RBAC + Admin dashboard + Ban]
-    F --> G[Beta: Cart + Orders]
-    G --> H[Beta: Security hardening]
-    H --> I{{Final demo}}
+    E --> F[Beta: RBAC + Orders]
+    F --> G[Beta: Admin dashboard + Ban]
+    G --> H{{Final demo}}
 ```
 
 ## Scope
@@ -74,7 +75,7 @@ flowchart LR
 - Deployment on Vercel
 
 **Out of scope**
-- Sign up and login, roles and permissions, cart and orders
+- Sign up and login, roles and permissions, orders
 
 ### Beta
 **In scope**
@@ -82,12 +83,11 @@ flowchart LR
 - User profile (change name and password)
 - Roles `customer`, `seller`, `admin` with RBAC and security scopes
 - Sellers manage only their own products
-- Cart and orders with order status (payment is simulated, cash on delivery)
+- Orders: a customer orders one product with a quantity; status `pending`, `shipped`, `delivered` (no payment, cash on delivery)
 - Admin dashboard (statistics, ban and unban users)
-- Security hardening (password hashing, login lockout, input validation)
 
 **Out of scope (this semester)**
-- Real payment gateway, reviews and ratings, coupons, automated tests, CI/CD
+- Cart, real payment gateway, reviews and ratings, coupons, automated tests, CI/CD
 
 ## Feature List
 | ID | Feature | Priority | Release | Requirement IDs |
@@ -95,20 +95,19 @@ flowchart LR
 | F-01 | Create, read, update, delete products | Must | MVP | FR-001..FR-003, FR-006 |
 | F-02 | Product list with pagination | Must | MVP | FR-004 |
 | F-03 | Search by name and filter by category | Should | MVP | FR-005 |
-| F-04 | Interactive API documentation | Should | MVP | FR-007 |
-| F-05 | Deployment on Vercel with Supabase PostgreSQL | Must | MVP | NFR-011, NFR-014 |
-| F-06 | Sign up, login, refresh token, logout, login lockout | Must | Beta | FR-009..FR-012, FR-028 |
-| F-07 | RBAC and security scopes | Must | Beta | FR-029 |
-| F-08 | Seller manages only own products | Must | Beta | FR-016 |
-| F-09 | Profile: change name and password | Should | Beta | FR-013..FR-015 |
-| F-10 | Shopping cart | Must | Beta | FR-017 |
-| F-11 | Place order, track and cancel, seller updates status | Must | Beta | FR-018..FR-022 |
-| F-12 | Admin dashboard statistics | Should | Beta | FR-023 |
-| F-13 | Admin bans and unbans users | Should | Beta | FR-024..FR-027 |
-| F-14 | Security hardening | Must | Beta | NFR-003..NFR-007, NFR-013 |
+| F-04 | Interactive API documentation | Should | MVP | FR-007, NFR-009 |
+| F-05 | Deployment on Vercel with Supabase PostgreSQL | Must | MVP | NFR-010, NFR-011 |
+| F-06 | Sign up, login, refresh token | Must | Beta | FR-008..FR-010 |
+| F-07 | RBAC and security scopes | Must | Beta | FR-024 |
+| F-08 | Seller manages only own products | Must | Beta | FR-014 |
+| F-09 | Profile: view, change name, change password | Should | Beta | FR-011..FR-013 |
+| F-10 | Customer places order and views own orders | Must | Beta | FR-015, FR-016 |
+| F-11 | Seller views and updates orders for own products | Must | Beta | FR-017, FR-018 |
+| F-12 | Admin dashboard statistics | Should | Beta | FR-019 |
+| F-13 | Admin lists users, bans and unbans | Should | Beta | FR-020..FR-023 |
+| F-14 | Basic security (hashing, secrets, validation, CORS) | Must | Beta | NFR-002..NFR-006 |
 | F-15 | Product image upload | Could | Beta | - |
-| F-16 | Payment gateway | Won't | Out of scope | - |
-| F-17 | Reviews, ratings, coupons | Won't | Out of scope | - |
+| F-16 | Cart, payment gateway, reviews, coupons | Won't | Out of scope | - |
 
 ## User Stories
 ### MVP
@@ -128,12 +127,11 @@ flowchart LR
 | US-08 | As a user, I want to log in and stay logged in, so that I do not enter my password again and again. |
 | US-09 | As a user, I want to change my name and password, so that my profile stays up to date and secure. |
 | US-10 | As a seller, I want to manage only my own products, so that other sellers cannot change them. |
-| US-11 | As a customer, I want to add products to a cart, so that I can order several items together. |
-| US-12 | As a customer, I want to place an order, see its status and cancel it while pending, so that I stay in control. |
-| US-13 | As a seller, I want to see and update orders for my products, so that I can fulfil them. |
-| US-14 | As an admin, I want to see platform statistics, so that I understand how the store is used. |
-| US-15 | As an admin, I want to ban or unban a user, so that I can stop misuse. |
-| US-16 | As a banned user, I should not be able to log in, so that the ban is effective. |
+| US-11 | As a customer, I want to order a product and see my order status, so that I know when it will arrive. |
+| US-12 | As a seller, I want to see and update orders for my products, so that I can fulfil them. |
+| US-13 | As an admin, I want to see platform statistics, so that I understand how the store is used. |
+| US-14 | As an admin, I want to ban or unban a user, so that I can stop misuse. |
+| US-15 | As a banned user, I should not be able to log in, so that the ban is effective. |
 
 ## Success Metrics
 | Metric | Target | Release |
@@ -142,7 +140,7 @@ flowchart LR
 | MVP acceptance criteria passed | 100% at mid-term demo | MVP |
 | Deployed and reachable | Live Vercel URL | MVP |
 | Unauthorized requests rejected | 100% return 401 or 403 | Beta |
-| Order flow completed | Browse → cart → order → status without error | Beta |
+| Order flow completed | Order placed and status updated to delivered without error | Beta |
 | Banned user login | 100% rejected | Beta |
 | Beta acceptance criteria passed | 100% at final demo | Beta |
 
@@ -155,9 +153,8 @@ flowchart LR
 | M4: Frontend and deploy | MVP | React product pages, Vercel deployment |
 | **Mid-term demo** | MVP | Demonstrate all MVP features |
 | M5: Auth and profile | Beta | Sign up, login, refresh token, profile |
-| M6: RBAC and admin | Beta | Roles, scopes, admin dashboard, ban and unban |
-| M7: Cart and orders | Beta | Cart, orders, order status, seller order view |
-| M8: Security | Beta | Hashing, login lockout, validation, secrets handling |
+| M6: RBAC and orders | Beta | Roles, scopes, seller own products, orders |
+| M7: Admin and security | Beta | Admin dashboard, ban and unban, security basics |
 | **Final demo** | Beta | Demonstrate all Beta features |
 
 ## Dependencies
@@ -165,7 +162,7 @@ flowchart LR
 |---|---|---|
 | Supabase PostgreSQL | External service | Free-tier limits or downtime |
 | Vercel | Platform | Deployment configuration issues |
-| Team time | Schedule | Cart and orders may not fit; fallback is ordering a single product directly |
+| Team time | Schedule | Orders may not fit; keep orders to the simple flow in this document |
 
 ## Acceptance Baseline
 A feature is accepted only if its user story, functional requirement, endpoint and acceptance criteria are traceable in the SRS ([02-srs.md](02-srs.md), section 7).
