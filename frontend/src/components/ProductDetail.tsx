@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react"
-import { getProduct } from "../api"
+import { deleteProduct, getProduct } from "../api"
 import type { Product } from "../types"
 
 type Props = {
   id: number
   onBack: () => void
+  onEdit: (id: number) => void
 }
 
-export default function ProductDetail({ id, onBack }: Props) {
+export default function ProductDetail({ id, onBack, onEdit }: Props) {
   const [product, setProduct] = useState<Product | null>(null)
   const [error, setError] = useState("")
 
@@ -26,6 +27,17 @@ export default function ProductDetail({ id, onBack }: Props) {
     }
   }, [id])
 
+  async function handleDelete() {
+    if (!product || !window.confirm(`Delete "${product.name}"?`)) return
+    setError("")
+    try {
+      await deleteProduct(product.id)
+      onBack()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    }
+  }
+
   return (
     <section>
       <div className="toolbar">
@@ -39,22 +51,33 @@ export default function ProductDetail({ id, onBack }: Props) {
       {!product && !error && <p>Loading...</p>}
 
       {product && (
-        <dl className="details">
-          <dt>Name</dt>
-          <dd>{product.name}</dd>
-          <dt>Description</dt>
-          <dd>{product.description || "-"}</dd>
-          <dt>Category</dt>
-          <dd>{product.category}</dd>
-          <dt>Price</dt>
-          <dd>{Number(product.price).toFixed(2)}</dd>
-          <dt>Stock</dt>
-          <dd>{product.stock}</dd>
-          <dt>Created</dt>
-          <dd>{new Date(product.created_at).toLocaleString()}</dd>
-          <dt>Updated</dt>
-          <dd>{new Date(product.updated_at).toLocaleString()}</dd>
-        </dl>
+        <>
+          <dl className="details">
+            <dt>Name</dt>
+            <dd>{product.name}</dd>
+            <dt>Description</dt>
+            <dd>{product.description || "-"}</dd>
+            <dt>Category</dt>
+            <dd>{product.category}</dd>
+            <dt>Price</dt>
+            <dd>{Number(product.price).toFixed(2)}</dd>
+            <dt>Stock</dt>
+            <dd>{product.stock}</dd>
+            <dt>Created</dt>
+            <dd>{new Date(product.created_at).toLocaleString()}</dd>
+            <dt>Updated</dt>
+            <dd>{new Date(product.updated_at).toLocaleString()}</dd>
+          </dl>
+
+          <div className="form-actions">
+            <button type="button" onClick={() => onEdit(product.id)}>
+              Edit
+            </button>
+            <button type="button" onClick={handleDelete}>
+              Delete
+            </button>
+          </div>
+        </>
       )}
     </section>
   )

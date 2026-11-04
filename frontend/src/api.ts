@@ -1,4 +1,4 @@
-import type { Product, ProductList } from "./types"
+import type { Product, ProductInput, ProductList } from "./types"
 
 const BASE = "/api/v1"
 
@@ -43,4 +43,27 @@ export function listProducts({ q, category, page, pageSize }: ListParams): Promi
 // Read single: GET /api/v1/products/{id}
 export function getProduct(id: number): Promise<Product> {
   return request<Product>(`/products/${id}`)
+}
+
+// Create: POST /api/v1/products
+export function createProduct(input: ProductInput): Promise<Product> {
+  return request<Product>("/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+}
+
+// Update: PUT /api/v1/products/{id}
+export function updateProduct(id: number, input: ProductInput): Promise<Product> {
+  return request<Product>(`/products/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+}
+
+// Delete: DELETE /api/v1/products/{id}
+export function deleteProduct(id: number): Promise<void> {
+  return request<void>(`/products/${id}`, { method: "DELETE" })
 }
