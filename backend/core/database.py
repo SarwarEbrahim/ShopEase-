@@ -28,7 +28,8 @@ else:
 def init_db() -> None:
     """Create the tables if they do not exist yet."""
     # Import the models so SQLModel knows about their tables.
-    from features.products import models  # noqa: F401
+    from features.auth import models as auth_models  # noqa: F401
+    from features.products import models as product_models  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
 
