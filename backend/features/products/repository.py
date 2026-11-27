@@ -12,6 +12,7 @@ def list_products(
     category: str | None,
     page: int,
     page_size: int,
+    owner_id: int | None = None,
 ) -> tuple[list[Product], int]:
     statement = select(Product)
     count_statement = select(func.count(col(Product.id)))
@@ -22,6 +23,10 @@ def list_products(
     if category:
         statement = statement.where(col(Product.category) == category)
         count_statement = count_statement.where(col(Product.category) == category)
+
+    if owner_id is not None:
+        statement = statement.where(col(Product.owner_id) == owner_id)
+        count_statement = count_statement.where(col(Product.owner_id) == owner_id)
 
     total = session.exec(count_statement).one()
     products = session.exec(
