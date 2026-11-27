@@ -13,13 +13,14 @@ from sqlmodel import Session
 from core import security
 from core.database import get_session
 from core.errors import (
+    ForbiddenError,
     NotAuthenticatedError,
     TokenExpiredError,
     TokenInvalidError,
     UserBannedError,
 )
 from features.auth import repository
-from features.auth.models import User
+from features.auth.models import ROLE_ADMIN, User
 
 # auto_error=False: we raise our own 401 with the SRS error body.
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -54,3 +55,22 @@ def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_roles(*allowed_roles: str):
+    """RBAC: build a dependency that only lets users with one of these roles in.
+
+    It runs get_current_user first (so 401 / banned checks still apply), then
+    compares the role stored in the database. Wrong role -> 403.
+    """
+
+    def checker(user: CurrentUser) -> User:
+        if user.role not in allowed_roles:
+            raise ForbiddenError()
+        return user
+
+    return checker
+
+
+# Use `admin: AdminUser` in an endpoint to make it admin-only.
+AdminUser = Annotated[User, Depends(require_roles(ROLE_ADMIN))]

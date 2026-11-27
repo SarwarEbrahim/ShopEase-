@@ -5,12 +5,16 @@ from fastapi.responses import JSONResponse
 
 from core.database import init_db
 from core.errors import AppError
+from features.admin.router import router as admin_router
 from features.auth.router import router as auth_router
+from features.auth.seed import seed_demo_accounts
 from features.products.router import router as products_router
 from features.products.service import ProductNotFoundError
 
 # Create the tables on startup (SQLite locally, Supabase PostgreSQL in production).
 init_db()
+# Create the demo admins/users once (only if SEED_PASSWORD is set on the server).
+seed_demo_accounts()
 
 # The docs live under /api because vercel.json only sends /api/* to the backend.
 app = FastAPI(
@@ -21,6 +25,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(products_router)
 
 

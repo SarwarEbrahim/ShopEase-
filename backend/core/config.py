@@ -24,3 +24,7 @@ def _secret(name: str, dev_default: str) -> str:
 JWT_SECRET = _secret("JWT_SECRET", "dev-only-jwt-secret-change-me-0123456789abcdef")
 # Mixed into passwords before hashing (the "pepper").
 PASSWORD_PEPPER = _secret("PASSWORD_PEPPER", "dev-only-pepper-change-me-0123456789abcdef")
+
+# Password for the demo accounts (2 admins, 3 users). Set it only on the server;
+# when it is not set, no demo accounts are created.
+SEED_PASSWORD = os.getenv("SEED_PASSWORD")
