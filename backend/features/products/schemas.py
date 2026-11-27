@@ -17,6 +17,7 @@ class ProductRead(ProductBase):
     """A product as returned by the API."""
 
     id: int
+    owner_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

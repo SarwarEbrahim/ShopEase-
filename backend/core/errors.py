@@ -79,3 +79,21 @@ class CannotModifyAdminError(AppError):
     status_code = 403
     error_code = "CANNOT_MODIFY_ADMIN"
     message = "You cannot ban another admin"
+
+
+class WrongPasswordError(AppError):
+    status_code = 400
+    error_code = "WRONG_PASSWORD"
+    message = "Current password is incorrect"
+
+
+class PasswordUnchangedError(AppError):
+    status_code = 400
+    error_code = "PASSWORD_UNCHANGED"
+    message = "The new password must be different from the current one"
+
+
+class TooManyAttemptsError(AppError):
+    status_code = 429
+    error_code = "TOO_MANY_ATTEMPTS"
+    message = "Too many failed attempts. Try again in 15 minutes"
