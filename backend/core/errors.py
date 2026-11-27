@@ -55,3 +55,27 @@ class UserBannedError(AppError):
     status_code = 403
     error_code = "USER_BANNED"
     message = "This account is banned"
+
+
+class ForbiddenError(AppError):
+    status_code = 403
+    error_code = "FORBIDDEN"
+    message = "You do not have permission to do this"
+
+
+class UserNotFoundError(AppError):
+    status_code = 404
+    error_code = "USER_NOT_FOUND"
+    message = "User not found"
+
+
+class CannotModifySelfError(AppError):
+    status_code = 403
+    error_code = "CANNOT_MODIFY_SELF"
+    message = "You cannot do this to your own account"
+
+
+class CannotModifyAdminError(AppError):
+    status_code = 403
+    error_code = "CANNOT_MODIFY_ADMIN"
+    message = "You cannot ban another admin"
