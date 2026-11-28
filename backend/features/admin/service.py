@@ -15,13 +15,17 @@ from features.admin.schemas import (
     AuditListResponse,
     AuditRead,
     CountItem,
+    UserOverview,
     SecurityOverview,
     StatsResponse,
 )
 from features.audit import repository as audit_repository
 from features.audit.models import AuditLog
 from features.auth import repository as user_repository
+from features.auth import service as auth_service
+from features.admin.schemas import UserDetail
 from features.auth.models import ROLE_ADMIN, User
+from features.auth.schemas import SessionRead
 from features.groups import repository as group_repository
 from features.groups.models import Group
 from features.products.models import Product
@@ -62,7 +66,9 @@ def ban_user(session: Session, admin: User, user_id: int, reason: str) -> User:
     target.is_banned = True
     target.ban_reason = reason.strip()
     target.updated_at = utcnow()
-    return user_repository.save(session, target)
+    saved = user_repository.save(session, target)
+    auth_service.revoke_all_sessions(session, saved.id, "banned")  # sign out everywhere
+    return saved
 
 
 def unban_user(session: Session, user_id: int) -> User:
@@ -93,6 +99,7 @@ def bulk_ban(session: Session, admin: User, ids: list[int], reason: str) -> tupl
         target.ban_reason = reason.strip()
         target.updated_at = utcnow()
         user_repository.save(session, target)
+        auth_service.revoke_all_sessions(session, target.id, "banned")
         updated += 1
     return updated, skipped
 
@@ -203,3 +210,22 @@ def delete_group(session: Session, group_id: int) -> None:
     if group is None:
         raise GroupNotFoundError()
     group_repository.delete_group(session, group)
+
+
+def user_overview(session: Session, user_id: int) -> UserOverview:
+    target = _get_target(session, user_id)
+    sessions = auth_service.list_sessions(session, target, None)
+    logs = audit_repository.recent_for_user(session, target.id, target.username, 10)
+    return UserOverview(
+        user=UserDetail.model_validate(target, from_attributes=True),
+        sessions=sessions,
+        recent_activity=[AuditRead.model_validate(l, from_attributes=True) for l in logs],
+        product_count=admin_repository.count(session, Product, col(Product.owner_id) == target.id),
+        group_count=admin_repository.count(session, Group, col(Group.owner_id) == target.id),
+    )
+
+
+def revoke_user_sessions(session: Session, user_id: int) -> int:
+    """Sign a user out of every device."""
+    target = _get_target(session, user_id)
+    return auth_service.revoke_all_sessions(session, target.id, "revoked_by_admin")

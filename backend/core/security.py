@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -39,11 +40,12 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def create_access_token(user_id: int, role: str) -> str:
+def create_access_token(user_id: int, role: str, session_id: int | None = None) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
         "role": role,
+        "sid": session_id,  # the login session this token belongs to (can be revoked)
         "iat": now,
         "exp": now + timedelta(minutes=config.ACCESS_TOKEN_MINUTES),
     }
@@ -63,3 +65,13 @@ def decode_access_token(token: str) -> dict:
         raise TokenError("TOKEN_EXPIRED")
     except jwt.InvalidTokenError:
         raise TokenError("TOKEN_INVALID")
+
+
+def generate_refresh_token() -> str:
+    """A long random string. It is given to the browser once; only its hash is stored."""
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(token: str) -> str:
+    # SHA-256 is enough here: the token is random (not a guessable password).
+    return hashlib.sha256(token.encode()).hexdigest()
