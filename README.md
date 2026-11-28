@@ -53,20 +53,26 @@ Only the owner can delete the group or its products, rename the group and manage
 
 ## What is implemented
 
-- Signup, login, logout, profile update and password change (current password required).
-- Short-lived JWT access token (15 minutes) with the user id and role. Missing, invalid, tampered or expired tokens return 401.
+- Signup, login, logout, profile update and password change (current password required; other devices are signed out).
+- Short-lived JWT access token (15 minutes) with the user id, role and session id. Missing, invalid, tampered or expired tokens return 401.
+- Refresh token in an httpOnly cookie, replaced on every use (rotation). Using an old refresh token again closes the session.
+- Server-side logout and session list: see where you are logged in and revoke a device.
 - A banned user is rejected on the very next request (403).
 - Brute-force protection: 5 failed logins for one username in 15 minutes lock that username for the rest of the window (429).
 - Role based access control in one module (`backend/features/auth/rbac.py`), enforced on the server.
 - Ownership rules: a normal user reads, changes and deletes only their own products (other users' products return 403).
 - Groups with per-member permissions (create, edit, assign).
 - Safety rules: an admin cannot change their own role, ban themselves or ban another admin.
-- Admin dashboard: overview statistics, security view (failed logins by IP and account), users (search, filters, pagination, ban and unban with reason, role change, bulk ban and unban), product and group moderation (delete one or many), activity log (with IP address and browser) and CSV exports of users, products and activity.
+- Admin dashboard: overview statistics, security view (failed logins by IP and account), users (search, filters, pagination, user detail with sessions and recent activity, ban and unban with reason, role change, sign out everywhere, bulk ban and unban), product and group moderation (delete one or many), activity log (with IP address and browser) and CSV exports of users, products and activity.
 - Frontend: login and signup pages, session restore without a guest flash, route guards, role based menu, logout and automatic logout when the server rejects the token.
 
-## Not implemented
+## Tests
 
-See section 6 of `docs/FINAL_REPORT.md`. In short: refresh tokens and session list or revoke, server-side token revocation before expiry, and automated pytest tests.
+43 automated API tests (`backend/tests`). From the `backend` folder: `pip install -r requirements-dev.txt`, then `python -m pytest -v`. They use a temporary SQLite database, not the live one.
+
+## Limitations
+
+See section E3 of `docs/FINAL_REPORT.md` (for example: no email verification or password reset, lockout is per username, access token kept in localStorage).
 
 ## Project structure
 
@@ -75,11 +81,12 @@ backend/
   main.py                  FastAPI app, error handler, startup
   core/                    config, database, errors, security (JWT, argon2)
   features/
-    auth/                  signup, login, profile, RBAC module, seed data
+    auth/                  signup, login, refresh, sessions, profile, RBAC module, seed data
     products/              product CRUD with ownership rules
     groups/                groups, members, group products
     admin/                 admin dashboard endpoints and CSV export
     audit/                 activity log
+  tests/                   automated pytest tests
 frontend/
   src/                     React app (pages, components, api.ts)
 docs/FINAL_REPORT.md       PRD, SRS and TDD of the finished work
@@ -108,6 +115,8 @@ npm run dev
 
 The Vite dev server proxies `/api` to `http://localhost:8000`.
 
+Tests: `cd backend`, `pip install -r requirements-dev.txt`, `python -m pytest -v`.
+
 ## Environment variables
 
 Real values are never committed. Only `backend/.env.example` is in the repository. On Vercel they are set as project environment variables.
@@ -118,4 +127,5 @@ Real values are never committed. Only `backend/.env.example` is in the repositor
 | `JWT_SECRET` | signs and verifies access tokens |
 | `PASSWORD_PEPPER` | secret mixed into passwords before hashing |
 | `ACCESS_TOKEN_MINUTES` | access token lifetime (default 15) |
+| `REFRESH_TOKEN_DAYS` | refresh token lifetime (default 7) |
 | `SEED_PASSWORD` | password for the demo accounts (accounts are only created when it is set) |
