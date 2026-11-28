@@ -10,6 +10,7 @@ type AuthState = {
   login: (username: string, password: string) => Promise<void>
   signup: (input: SignupInput) => Promise<void>
   logout: () => void
+  updateUser: (user: User) => void
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -57,13 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(() => {
+    // Tell the server (it records the logout), then forget the token either way.
+    api.logoutRequest().catch(() => undefined)
     clearToken()
     setUser(null)
     setNotice("")
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, notice, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, notice, login, signup, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   )

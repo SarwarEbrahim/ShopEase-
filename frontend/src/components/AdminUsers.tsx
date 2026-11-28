@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react"
-import { banUser, changeRole, listUsers, unbanUser } from "../api"
+import { banUser, bulkBan, bulkUnban, changeRole, downloadCsv, listUsers, unbanUser } from "../api"
 import { useAuth } from "../AuthContext"
 import type { Role, User, UserList } from "../types"
 
@@ -19,6 +19,11 @@ export default function AdminUsers() {
   // The user we are about to ban (we ask for a reason first).
   const [banTarget, setBanTarget] = useState<User | null>(null)
   const [reason, setReason] = useState("")
+
+  // Users ticked for a bulk ban / unban, and the reason typed for a bulk ban.
+  const [selected, setSelected] = useState<number[]>([])
+  const [bulkReason, setBulkReason] = useState("")
+  const [info, setInfo] = useState("")
 
   useEffect(() => {
     let cancelled = false
@@ -61,6 +66,37 @@ export default function AdminUsers() {
     }
   }
 
+  function toggle(id: number) {
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  }
+
+  async function runBulk(action: () => Promise<{ updated: number; skipped: number }>) {
+    setError("")
+    setInfo("")
+    try {
+      const result = await action()
+      setInfo(`${result.updated} updated, ${result.skipped} skipped (yourself and admins cannot be banned).`)
+      setSelected([])
+      setBulkReason("")
+      setReloadKey((k) => k + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    }
+  }
+
+  async function handleExport() {
+    setError("")
+    try {
+      const params: Record<string, string> = {}
+      if (filters.q) params.q = filters.q
+      if (filters.role) params.role = filters.role
+      if (filters.status) params.is_banned = String(filters.status === "banned")
+      await downloadCsv("/admin/export/users.csv", params, "users.csv")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+    }
+  }
+
   async function confirmBan(e: FormEvent) {
     e.preventDefault()
     if (!banTarget || !reason.trim()) return
@@ -75,7 +111,10 @@ export default function AdminUsers() {
   return (
     <section>
       <div className="toolbar">
-        <h2>Users</h2>
+        <h3>Users</h3>
+        <button type="button" onClick={handleExport}>
+          Export CSV
+        </button>
       </div>
 
       <form className="filters" onSubmit={handleSearch}>
@@ -110,6 +149,20 @@ export default function AdminUsers() {
         </form>
       )}
 
+      {selected.length > 0 && (
+        <div className="filters">
+          <span>{selected.length} selected</span>
+          <input value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} placeholder="Reason for bulk ban" maxLength={300} />
+          <button type="button" disabled={!bulkReason.trim()} onClick={() => runBulk(() => bulkBan(selected, bulkReason.trim()))}>
+            Ban selected
+          </button>
+          <button type="button" onClick={() => runBulk(() => bulkUnban(selected))}>
+            Unban selected
+          </button>
+        </div>
+      )}
+
+      {info && <p className="success">{info}</p>}
       {error && <p className="error">{error}</p>}
       {loading && <p>Loading...</p>}
       {data && !loading && data.items.length === 0 && <p>No users found.</p>}
@@ -118,6 +171,7 @@ export default function AdminUsers() {
         <table>
           <thead>
             <tr>
+              <th />
               <th>ID</th>
               <th>Username</th>
               <th>Email</th>
@@ -132,6 +186,11 @@ export default function AdminUsers() {
               const nextRole: Role = u.role === "admin" ? "user" : "admin"
               return (
                 <tr key={u.id}>
+                  <td>
+                    {!isMe && (
+                      <input type="checkbox" className="check" checked={selected.includes(u.id)} onChange={() => toggle(u.id)} />
+                    )}
+                  </td>
                   <td>{u.id}</td>
                   <td>
                     {u.username}

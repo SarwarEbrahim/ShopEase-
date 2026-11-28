@@ -63,3 +63,52 @@ export type UserList = {
   page: number
   page_size: number
 }
+
+export type Stats = {
+  total_users: number
+  banned_users: number
+  admins: number
+  total_products: number
+  new_users_7d: number
+  new_products_7d: number
+  failed_logins_24h: number
+}
+
+export type AuditEntry = {
+  id: number
+  event: string
+  user_id: number | null
+  username: string | null
+  ip_address: string | null
+  user_agent: string | null
+  detail: string | null
+  created_at: string
+}
+
+export type AuditList = {
+  items: AuditEntry[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type CountItem = { key: string; count: number }
+
+export type SecurityOverview = {
+  by_ip: CountItem[]
+  by_account: CountItem[]
+}
+
+export type AdminProduct = Product & {
+  owner_id: number | null
+  owner_username: string | null
+}
+
+export type AdminProductList = {
+  items: AdminProduct[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type BulkResult = { updated: number; skipped: number }

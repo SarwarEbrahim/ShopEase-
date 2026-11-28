@@ -1,10 +1,15 @@
 import { AUTH_EXPIRED_EVENT, clearToken, getToken } from "./auth"
 import type {
+  AdminProductList,
+  AuditList,
+  BulkResult,
   Product,
   ProductInput,
   ProductList,
   Role,
+  SecurityOverview,
   SignupInput,
+  Stats,
   TokenResponse,
   User,
   UserDetail,
@@ -155,4 +160,110 @@ export function changeRole(id: number, role: Role): Promise<UserDetail> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ role }),
   })
+}
+
+// ---- Logout, profile and password ----
+
+// POST /api/v1/auth/logout (records the logout in the activity log)
+export function logoutRequest(): Promise<void> {
+  return request<void>("/auth/logout", { method: "POST" })
+}
+
+// PATCH /api/v1/auth/me
+export function updateProfile(input: { full_name?: string; email?: string }): Promise<User> {
+  return request<User>("/auth/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+}
+
+// POST /api/v1/auth/change-password
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return request<void>("/auth/change-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  })
+}
+
+// ---- More admin endpoints ----
+
+// GET /api/v1/admin/stats
+export function getStats(): Promise<Stats> {
+  return request<Stats>("/admin/stats")
+}
+
+// GET /api/v1/admin/security
+export function getSecurity(): Promise<SecurityOverview> {
+  return request<SecurityOverview>("/admin/security")
+}
+
+// GET /api/v1/admin/audit
+export function listAudit(p: { event: string; q: string; page: number; pageSize: number }): Promise<AuditList> {
+  const params = new URLSearchParams({ page: String(p.page), page_size: String(p.pageSize) })
+  if (p.event) params.set("event", p.event)
+  if (p.q) params.set("q", p.q)
+  return request<AuditList>(`/admin/audit?${params}`)
+}
+
+// GET /api/v1/admin/products
+export function listAdminProducts(p: { q: string; page: number; pageSize: number }): Promise<AdminProductList> {
+  const params = new URLSearchParams({ page: String(p.page), page_size: String(p.pageSize) })
+  if (p.q) params.set("q", p.q)
+  return request<AdminProductList>(`/admin/products?${params}`)
+}
+
+// DELETE /api/v1/admin/products/{id}
+export function deleteAdminProduct(id: number): Promise<void> {
+  return request<void>(`/admin/products/${id}`, { method: "DELETE" })
+}
+
+// POST /api/v1/admin/products/bulk-delete
+export function bulkDeleteProducts(ids: number[]): Promise<BulkResult> {
+  return request<BulkResult>("/admin/products/bulk-delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  })
+}
+
+// POST /api/v1/admin/users/bulk-ban and bulk-unban
+export function bulkBan(ids: number[], reason: string): Promise<BulkResult> {
+  return request<BulkResult>("/admin/users/bulk-ban", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, reason }),
+  })
+}
+
+export function bulkUnban(ids: number[]): Promise<BulkResult> {
+  return request<BulkResult>("/admin/users/bulk-unban", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  })
+}
+
+// CSV export. A plain link cannot send the Authorization header, so we fetch the
+// file with the token and let the browser save it.
+export async function downloadCsv(
+  path: string,
+  params: Record<string, string>,
+  filename: string,
+): Promise<void> {
+  const token = getToken()
+  const query = new URLSearchParams(params)
+  const res = await fetch(`${BASE}${path}?${query}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const url = URL.createObjectURL(await res.blob())
+  const link = document.createElement("a")
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
