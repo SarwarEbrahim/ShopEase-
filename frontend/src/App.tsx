@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import { AuthProvider, useAuth } from "./AuthContext"
-import AdminUsers from "./components/AdminUsers"
+import AdminPage from "./components/AdminPage"
 import AuthPage from "./components/AuthPage"
 import ProductDetail from "./components/ProductDetail"
 import ProductForm from "./components/ProductForm"
 import ProductList from "./components/ProductList"
+import ProfilePage from "./components/ProfilePage"
 
 // Which product screen is showing. The form has an `id` only when editing.
 type ProductView =
@@ -76,9 +77,9 @@ function Shell() {
             <>
               <a href="#/products">Products</a>
               {user.role === "admin" && <a href="#/admin">Admin</a>}
-              <span className="who">
+              <a href="#/profile" className="who">
                 {user.username} <span className={`badge ${user.role}`}>{user.role}</span>
-              </span>
+              </a>
               <button type="button" onClick={logout}>
                 Log out
               </button>
@@ -95,13 +96,14 @@ function Shell() {
       {current === "login" && <AuthPage mode="login" />}
       {current === "signup" && <AuthPage mode="signup" />}
       {current === "products" && <Products />}
+      {current === "profile" && <ProfilePage />}
       {current === "admin" &&
         (user?.role === "admin" ? (
-          <AdminUsers />
+          <AdminPage />
         ) : (
           <p className="error">403: you do not have access to this page.</p>
         ))}
-      {!["login", "signup", "products", "admin"].includes(current) && <p>Page not found.</p>}
+      {!["login", "signup", "products", "profile", "admin"].includes(current) && <p>Page not found.</p>}
     </main>
   )
 }
