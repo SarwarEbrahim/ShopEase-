@@ -16,6 +16,7 @@ ROLE_CHANGE = "role_change"
 BAN = "ban"
 UNBAN = "unban"
 PRODUCT_DELETE = "product_delete"
+GROUP_DELETE = "group_delete"
 EXPORT = "export"
 
 

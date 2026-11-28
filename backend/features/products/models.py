@@ -29,5 +29,9 @@ class Product(ProductBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     # The user who owns this product (users.id). Used by the ownership rules.
     owner_id: int | None = Field(default=None, index=True)
+    # Set when the product belongs to a group (shared with the members), and who
+    # it is assigned to inside that group.
+    group_id: int | None = Field(default=None, index=True)
+    assignee_id: int | None = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

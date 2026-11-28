@@ -30,6 +30,7 @@ def init_db() -> None:
     # Import the models so SQLModel knows about their tables.
     from features.auth import models as auth_models  # noqa: F401
     from features.audit import models as audit_models  # noqa: F401
+    from features.groups import models as group_models  # noqa: F401
     from features.products import models as product_models  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
@@ -37,17 +38,18 @@ def init_db() -> None:
 
 
 def _migrate() -> None:
-    """create_all never changes a table that already exists, so a column added later
-    (products.owner_id) is added here by hand. It is safe to run on every start."""
+    """create_all never changes a table that already exists, so columns added later
+    to `products` are added here by hand. It is safe to run on every start."""
     from sqlalchemy import inspect, text
 
     if "products" not in inspect(engine).get_table_names():
         return
     columns = {c["name"] for c in inspect(engine).get_columns("products")}
     with engine.begin() as conn:
-        if "owner_id" not in columns:
-            conn.execute(text("ALTER TABLE products ADD COLUMN owner_id INTEGER"))
-        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_products_owner_id ON products (owner_id)"))
+        for name in ("owner_id", "group_id", "assignee_id"):
+            if name not in columns:
+                conn.execute(text(f"ALTER TABLE products ADD COLUMN {name} INTEGER"))
+            conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_products_{name} ON products ({name})"))
 
 
 def get_session() -> Iterator[Session]:

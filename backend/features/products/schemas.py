@@ -18,6 +18,8 @@ class ProductRead(ProductBase):
 
     id: int
     owner_id: int | None = None
+    group_id: int | None = None
+    assignee_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

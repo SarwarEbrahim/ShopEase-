@@ -13,6 +13,7 @@ def list_products(
     page: int,
     page_size: int,
     owner_id: int | None = None,
+    personal_only: bool = False,
 ) -> tuple[list[Product], int]:
     statement = select(Product)
     count_statement = select(func.count(col(Product.id)))
@@ -27,6 +28,10 @@ def list_products(
     if owner_id is not None:
         statement = statement.where(col(Product.owner_id) == owner_id)
         count_statement = count_statement.where(col(Product.owner_id) == owner_id)
+
+    if personal_only:  # group products are only reachable through the group endpoints
+        statement = statement.where(col(Product.group_id).is_(None))
+        count_statement = count_statement.where(col(Product.group_id).is_(None))
 
     total = session.exec(count_statement).one()
     products = session.exec(

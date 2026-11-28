@@ -8,6 +8,8 @@ from core.errors import CannotModifyAdminError, CannotModifySelfError, UserNotFo
 from core.utils import utcnow
 from features.admin import repository as admin_repository
 from features.admin.schemas import (
+    AdminGroupList,
+    AdminGroupRead,
     AdminProductList,
     AdminProductRead,
     AuditListResponse,
@@ -20,6 +22,8 @@ from features.audit import repository as audit_repository
 from features.audit.models import AuditLog
 from features.auth import repository as user_repository
 from features.auth.models import ROLE_ADMIN, User
+from features.groups import repository as group_repository
+from features.groups.models import Group
 from features.products.models import Product
 from features.products.service import ProductNotFoundError
 
@@ -117,6 +121,7 @@ def stats(session: Session) -> StatsResponse:
         banned_users=count(session, User, col(User.is_banned) == True),  # noqa: E712
         admins=count(session, User, col(User.role) == ROLE_ADMIN),
         total_products=count(session, Product),
+        total_groups=count(session, Group),
         new_users_7d=count(session, User, col(User.created_at) >= week_ago),
         new_products_7d=count(session, Product, col(Product.created_at) >= week_ago),
         failed_logins_24h=audit_repository.count_failures_since(session, now - timedelta(days=1)),
@@ -176,3 +181,25 @@ def bulk_delete_products(session: Session, ids: list[int]) -> tuple[int, int]:
         admin_repository.delete_product(session, product)
         deleted += 1
     return deleted, skipped
+
+
+def list_groups(session: Session, page: int, page_size: int) -> AdminGroupList:
+    rows, total = group_repository.all_groups(session, (page - 1) * page_size, page_size)
+    return AdminGroupList(
+        items=[
+            AdminGroupRead(id=g.id, name=g.name, owner_id=g.owner_id, owner_username=name, created_at=g.created_at)
+            for g, name in rows
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def delete_group(session: Session, group_id: int) -> None:
+    from core.errors import GroupNotFoundError
+
+    group = group_repository.get_group(session, group_id)
+    if group is None:
+        raise GroupNotFoundError()
+    group_repository.delete_group(session, group)

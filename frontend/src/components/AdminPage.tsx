@@ -2,15 +2,17 @@ import { useEffect, useState } from "react"
 import { getSecurity, getStats } from "../api"
 import type { SecurityOverview, Stats } from "../types"
 import AdminAudit from "./AdminAudit"
+import AdminGroups from "./AdminGroups"
 import AdminProducts from "./AdminProducts"
 import AdminUsers from "./AdminUsers"
 
-type Tab = "overview" | "users" | "products" | "activity"
+type Tab = "overview" | "users" | "products" | "groups" | "activity"
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
   { id: "products", label: "Products" },
+  { id: "groups", label: "Groups" },
   { id: "activity", label: "Activity log" },
 ]
 
@@ -36,6 +38,7 @@ function Overview() {
     ["Banned users", stats.banned_users],
     ["Admins", stats.admins],
     ["Products", stats.total_products],
+    ["Groups", stats.total_groups],
     ["New users (7 days)", stats.new_users_7d],
     ["New products (7 days)", stats.new_products_7d],
     ["Failed logins (24 h)", stats.failed_logins_24h],
@@ -115,6 +118,7 @@ export default function AdminPage() {
       {tab === "overview" && <Overview />}
       {tab === "users" && <AdminUsers />}
       {tab === "products" && <AdminProducts />}
+      {tab === "groups" && <AdminGroups />}
       {tab === "activity" && <AdminAudit />}
     </section>
   )

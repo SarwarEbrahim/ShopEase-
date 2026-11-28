@@ -8,6 +8,7 @@ from core.errors import AppError
 from features.admin.router import router as admin_router
 from features.auth.router import router as auth_router
 from features.auth.seed import seed_demo_accounts
+from features.groups.router import router as groups_router
 from features.products.router import router as products_router
 from features.products.service import ProductNotFoundError
 
@@ -26,6 +27,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(groups_router)
 app.include_router(products_router)
 
 

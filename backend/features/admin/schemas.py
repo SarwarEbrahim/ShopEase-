@@ -32,6 +32,7 @@ class StatsResponse(BaseModel):
     banned_users: int
     admins: int
     total_products: int
+    total_groups: int
     new_users_7d: int
     new_products_7d: int
     failed_logins_24h: int
@@ -89,3 +90,18 @@ class BulkBanRequest(IdsRequest):
 class BulkResult(BaseModel):
     updated: int
     skipped: int
+
+
+class AdminGroupRead(BaseModel):
+    id: int
+    name: str
+    owner_id: int
+    owner_username: str | None = None
+    created_at: datetime
+
+
+class AdminGroupList(BaseModel):
+    items: list[AdminGroupRead]
+    total: int
+    page: int
+    page_size: int

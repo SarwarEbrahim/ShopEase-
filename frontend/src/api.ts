@@ -1,8 +1,13 @@
 import { AUTH_EXPIRED_EVENT, clearToken, getToken } from "./auth"
 import type {
+  AdminGroupList,
   AdminProductList,
   AuditList,
   BulkResult,
+  GroupDetail,
+  Group,
+  GroupProduct,
+  Member,
   Product,
   ProductInput,
   ProductList,
@@ -266,4 +271,91 @@ export async function downloadCsv(
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+}
+
+// ---- Groups ----
+
+const JSON_HEADERS = { "Content-Type": "application/json" }
+
+export function listGroups(): Promise<Group[]> {
+  return request<Group[]>("/groups")
+}
+
+export function createGroup(name: string): Promise<Group> {
+  return request<Group>("/groups", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ name }) })
+}
+
+export function getGroup(id: number): Promise<GroupDetail> {
+  return request<GroupDetail>(`/groups/${id}`)
+}
+
+export function renameGroup(id: number, name: string): Promise<Group> {
+  return request<Group>(`/groups/${id}`, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify({ name }) })
+}
+
+export function deleteGroup(id: number): Promise<void> {
+  return request<void>(`/groups/${id}`, { method: "DELETE" })
+}
+
+export type Permissions = { can_create: boolean; can_edit: boolean; can_assign: boolean }
+
+export function addMember(groupId: number, username: string, perms: Permissions): Promise<Member> {
+  return request<Member>(`/groups/${groupId}/members`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ username, ...perms }),
+  })
+}
+
+export function updateMember(groupId: number, userId: number, perms: Permissions): Promise<Member> {
+  return request<Member>(`/groups/${groupId}/members/${userId}`, {
+    method: "PATCH",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(perms),
+  })
+}
+
+export function removeMember(groupId: number, userId: number): Promise<void> {
+  return request<void>(`/groups/${groupId}/members/${userId}`, { method: "DELETE" })
+}
+
+export function listGroupProducts(groupId: number): Promise<GroupProduct[]> {
+  return request<GroupProduct[]>(`/groups/${groupId}/products`)
+}
+
+export function createGroupProduct(groupId: number, input: ProductInput): Promise<GroupProduct> {
+  return request<GroupProduct>(`/groups/${groupId}/products`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateGroupProduct(groupId: number, id: number, input: ProductInput): Promise<GroupProduct> {
+  return request<GroupProduct>(`/groups/${groupId}/products/${id}`, {
+    method: "PUT",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteGroupProduct(groupId: number, id: number): Promise<void> {
+  return request<void>(`/groups/${groupId}/products/${id}`, { method: "DELETE" })
+}
+
+export function assignGroupProduct(groupId: number, id: number, userId: number | null): Promise<GroupProduct> {
+  return request<GroupProduct>(`/groups/${groupId}/products/${id}/assign`, {
+    method: "PUT",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ user_id: userId }),
+  })
+}
+
+// GET /api/v1/admin/groups and DELETE /api/v1/admin/groups/{id}
+export function listAdminGroups(page: number): Promise<AdminGroupList> {
+  return request<AdminGroupList>(`/admin/groups?page=${page}&page_size=10`)
+}
+
+export function deleteAdminGroup(id: number): Promise<void> {
+  return request<void>(`/admin/groups/${id}`, { method: "DELETE" })
 }
