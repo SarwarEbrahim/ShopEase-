@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { AuthProvider, useAuth } from "./AuthContext"
 import AdminPage from "./components/AdminPage"
 import AuthPage from "./components/AuthPage"
+import GroupsPage from "./components/GroupsPage"
+import GroupView from "./components/GroupView"
 import ProductDetail from "./components/ProductDetail"
 import ProductForm from "./components/ProductForm"
 import ProductList from "./components/ProductList"
@@ -64,7 +66,10 @@ function Shell() {
   }
 
   // Route guards. The server enforces the same rules; this only keeps the UI honest.
-  let current = page
+  // "groups/5" -> the page "groups" and the group id 5
+  const [route, arg] = page.split("/")
+  const groupId = Number(arg)
+  let current = route
   if (!user && current !== "login" && current !== "signup") current = "login"
   if (user && (current === "login" || current === "signup" || current === "")) current = "products"
 
@@ -76,6 +81,7 @@ function Shell() {
           {user ? (
             <>
               <a href="#/products">Products</a>
+              <a href="#/groups">Groups</a>
               {user.role === "admin" && <a href="#/admin">Admin</a>}
               <a href="#/profile" className="who">
                 {user.username} <span className={`badge ${user.role}`}>{user.role}</span>
@@ -97,13 +103,14 @@ function Shell() {
       {current === "signup" && <AuthPage mode="signup" />}
       {current === "products" && <Products />}
       {current === "profile" && <ProfilePage />}
+      {current === "groups" && (groupId ? <GroupView key={groupId} groupId={groupId} /> : <GroupsPage />)}
       {current === "admin" &&
         (user?.role === "admin" ? (
           <AdminPage />
         ) : (
           <p className="error">403: you do not have access to this page.</p>
         ))}
-      {!["login", "signup", "products", "profile", "admin"].includes(current) && <p>Page not found.</p>}
+      {!["login", "signup", "products", "groups", "profile", "admin"].includes(current) && <p>Page not found.</p>}
     </main>
   )
 }

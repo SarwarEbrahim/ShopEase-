@@ -2,6 +2,7 @@
 
 from sqlmodel import Session
 
+from core.errors import ForbiddenError
 from features.auth.models import User
 from features.auth.rbac import (
     PERM_RECORDS_MANAGE_ALL,
@@ -31,9 +32,11 @@ def list_products(
     page_size: int,
 ) -> ProductList:
     # A normal user only sees their own products; an admin sees all of them.
-    owner_id = None if has_permission(user, PERM_RECORDS_MANAGE_ALL) else user.id
+    is_admin = has_permission(user, PERM_RECORDS_MANAGE_ALL)
     products, total = repository.list_products(
-        session, q, category, page, page_size, owner_id
+        session, q, category, page, page_size,
+        owner_id=None if is_admin else user.id,
+        personal_only=not is_admin,
     )
     return ProductList(
         items=[ProductRead.model_validate(p, from_attributes=True) for p in products],
@@ -52,6 +55,10 @@ def _load(session: Session, product_id: int) -> Product:
 
 def get_product(session: Session, user: User, product_id: int) -> Product:
     product = _load(session, product_id)
+    # Group products follow the group's permissions, so they are only reachable
+    # through /groups/... (an admin can still moderate them).
+    if product.group_id is not None and not has_permission(user, PERM_RECORDS_MANAGE_ALL):
+        raise ForbiddenError()
     ensure_can_access_record(user, product.owner_id)  # someone else's product -> 403
     return product
 

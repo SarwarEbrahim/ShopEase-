@@ -30,3 +30,27 @@ def can_access_record(user: User, owner_id: int | None) -> bool:
 def ensure_can_access_record(user: User, owner_id: int | None) -> None:
     if not can_access_record(user, owner_id):
         raise ForbiddenError()
+
+
+# ---- Permissions inside a group (stored per member) ----
+GROUP_CREATE = "create"  # add products to the group
+GROUP_EDIT = "edit"  # change the group's products
+GROUP_ASSIGN = "assign"  # assign a group product to a member
+# Only the owner can rename or delete the group and manage its members.
+ALL_GROUP_PERMISSIONS = frozenset({GROUP_CREATE, GROUP_EDIT, GROUP_ASSIGN})
+
+
+def group_permissions(owner_id: int, user_id: int, member) -> frozenset[str]:
+    """What this user may do in the group. `member` is their membership row or None."""
+    if user_id == owner_id:
+        return ALL_GROUP_PERMISSIONS
+    if member is None:
+        return frozenset()
+    granted = set()
+    if member.can_create:
+        granted.add(GROUP_CREATE)
+    if member.can_edit:
+        granted.add(GROUP_EDIT)
+    if member.can_assign:
+        granted.add(GROUP_ASSIGN)
+    return frozenset(granted)

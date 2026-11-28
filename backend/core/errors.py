@@ -97,3 +97,33 @@ class TooManyAttemptsError(AppError):
     status_code = 429
     error_code = "TOO_MANY_ATTEMPTS"
     message = "Too many failed attempts. Try again in 15 minutes"
+
+
+class GroupNotFoundError(AppError):
+    status_code = 404
+    error_code = "GROUP_NOT_FOUND"
+    message = "Group not found"
+
+
+class NotGroupOwnerError(AppError):
+    status_code = 403
+    error_code = "NOT_GROUP_OWNER"
+    message = "Only the group owner can do this"
+
+
+class GroupPermissionError(AppError):
+    status_code = 403
+    error_code = "GROUP_PERMISSION_DENIED"
+    message = "You do not have this permission in the group"
+
+
+class AlreadyMemberError(AppError):
+    status_code = 409
+    error_code = "ALREADY_MEMBER"
+    message = "This user is already in the group"
+
+
+class NotAMemberError(AppError):
+    status_code = 400
+    error_code = "NOT_A_MEMBER"
+    message = "This user is not a member of the group"

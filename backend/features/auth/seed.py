@@ -14,6 +14,7 @@ from core import config, security
 from core.database import engine
 from features.auth import repository
 from features.auth.models import ROLE_ADMIN, ROLE_USER, User
+from features.groups.models import Group, GroupMember
 from features.products.models import Product
 
 DEMO_ACCOUNTS = [
@@ -52,6 +53,7 @@ def seed_demo_accounts() -> None:
             )
 
         _seed_products(session)
+        _seed_group(session)
 
 
 def _seed_products(session: Session) -> None:
@@ -75,4 +77,25 @@ def _seed_products(session: Session) -> None:
             session.add(
                 Product(name=name, category=category, price=Decimal(price), stock=stock, owner_id=user.id)
             )
+    session.commit()
+
+
+def _seed_group(session: Session) -> None:
+    """One shared group with mixed permissions (owner user1, members user2 and user3)."""
+    if session.exec(select(Group).where(col(Group.name) == "Demo Team")).first():
+        return
+    owner = repository.get_by_username(session, "user1")
+    member_a = repository.get_by_username(session, "user2")
+    member_b = repository.get_by_username(session, "user3")
+    if owner is None or member_a is None or member_b is None:
+        return
+    group = Group(name="Demo Team", owner_id=owner.id)
+    session.add(group)
+    session.commit()
+    session.refresh(group)
+    # user2 may create and edit; user3 may only assign.
+    session.add(GroupMember(group_id=group.id, user_id=member_a.id, can_create=True, can_edit=True, can_assign=False))
+    session.add(GroupMember(group_id=group.id, user_id=member_b.id, can_create=False, can_edit=False, can_assign=True))
+    for name, category, price, stock in [("Team Whiteboard", "Office", "1500.00", 3), ("Shared Projector", "Electronics", "28000.00", 1)]:
+        session.add(Product(name=name, category=category, price=Decimal(price), stock=stock, owner_id=owner.id, group_id=group.id))
     session.commit()

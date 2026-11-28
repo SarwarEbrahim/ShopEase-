@@ -69,6 +69,7 @@ export type Stats = {
   banned_users: number
   admins: number
   total_products: number
+  total_groups: number
   new_users_7d: number
   new_products_7d: number
   failed_logins_24h: number
@@ -112,3 +113,47 @@ export type AdminProductList = {
 }
 
 export type BulkResult = { updated: number; skipped: number }
+
+// ---- Groups ----
+
+export type Group = {
+  id: number
+  name: string
+  owner_id: number
+  owner_username: string | null
+  is_owner: boolean
+  my_permissions: string[] // "create" | "edit" | "assign"
+  created_at: string
+}
+
+export type Member = {
+  user_id: number
+  username: string
+  full_name: string
+  can_create: boolean
+  can_edit: boolean
+  can_assign: boolean
+}
+
+export type GroupDetail = Group & { members: Member[] }
+
+export type GroupProduct = Product & {
+  owner_id: number | null
+  assignee_id: number | null
+  assignee_username: string | null
+}
+
+export type AdminGroup = {
+  id: number
+  name: string
+  owner_id: number
+  owner_username: string | null
+  created_at: string
+}
+
+export type AdminGroupList = {
+  items: AdminGroup[]
+  total: number
+  page: number
+  page_size: number
+}

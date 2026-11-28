@@ -9,6 +9,7 @@ from core.database import get_session
 from features.admin import service
 from features.admin.exports import to_csv
 from features.admin.schemas import (
+    AdminGroupList,
     AdminProductList,
     AuditListResponse,
     BanRequest,
@@ -22,7 +23,7 @@ from features.admin.schemas import (
     UserListResponse,
 )
 from features.audit import service as audit
-from features.audit.models import BAN, EXPORT, PRODUCT_DELETE, ROLE_CHANGE, UNBAN
+from features.audit.models import BAN, EXPORT, GROUP_DELETE, PRODUCT_DELETE, ROLE_CHANGE, UNBAN
 from features.auth.dependencies import AdminUser
 from features.auth.schemas import UserRead
 
@@ -152,6 +153,26 @@ def delete_product(
 ) -> Response:
     service.delete_product(session, product_id)
     audit.record(session, PRODUCT_DELETE, request, user=admin, detail=f"product_id={product_id} (admin)")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# -------------------------------------------------------------------- groups
+
+
+@router.get("/groups", response_model=AdminGroupList)
+def list_groups(
+    admin: AdminUser,
+    session: SessionDep,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+):
+    return service.list_groups(session, page, page_size)
+
+
+@router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_group(group_id: int, request: Request, admin: AdminUser, session: SessionDep) -> Response:
+    service.delete_group(session, group_id)
+    audit.record(session, GROUP_DELETE, request, user=admin, detail=f"group_id={group_id} (admin)")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
