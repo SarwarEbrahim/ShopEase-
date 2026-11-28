@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from features.auth.schemas import UserRead
+from features.auth.schemas import SessionRead, UserRead
 from features.products.schemas import ProductRead
 
 
@@ -105,3 +105,13 @@ class AdminGroupList(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class UserOverview(BaseModel):
+    """Everything the admin needs on one screen about one user."""
+
+    user: UserDetail
+    sessions: list[SessionRead]
+    recent_activity: list[AuditRead]
+    product_count: int
+    group_count: int

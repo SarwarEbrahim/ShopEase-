@@ -127,3 +127,27 @@ class NotAMemberError(AppError):
     status_code = 400
     error_code = "NOT_A_MEMBER"
     message = "This user is not a member of the group"
+
+
+class SessionRevokedError(AppError):
+    status_code = 401
+    error_code = "SESSION_REVOKED"
+    message = "This session has been signed out"
+
+
+class RefreshTokenInvalidError(AppError):
+    status_code = 401
+    error_code = "REFRESH_TOKEN_INVALID"
+    message = "Refresh token is missing, expired or revoked"
+
+
+class RefreshTokenReusedError(AppError):
+    status_code = 401
+    error_code = "REFRESH_TOKEN_REUSED"
+    message = "Refresh token was already used. The session has been closed"
+
+
+class SessionNotFoundError(AppError):
+    status_code = 404
+    error_code = "SESSION_NOT_FOUND"
+    message = "Session not found"

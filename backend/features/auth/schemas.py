@@ -61,3 +61,13 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int  # seconds
     user: UserRead
+
+
+class SessionRead(BaseModel):
+    id: int
+    ip_address: str | None
+    user_agent: str | None
+    created_at: datetime
+    last_used_at: datetime
+    expires_at: datetime
+    current: bool = False

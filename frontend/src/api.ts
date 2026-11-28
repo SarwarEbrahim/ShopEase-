@@ -1,4 +1,4 @@
-import { AUTH_EXPIRED_EVENT, clearToken, getToken } from "./auth"
+import { AUTH_EXPIRED_EVENT, clearToken, getToken, setToken } from "./auth"
 import type {
   AdminGroupList,
   AdminProductList,
@@ -13,12 +13,14 @@ import type {
   ProductList,
   Role,
   SecurityOverview,
+  SessionInfo,
   SignupInput,
   Stats,
   TokenResponse,
   User,
   UserDetail,
   UserList,
+  UserOverview,
 } from "./types"
 
 const BASE = "/api/v1"
@@ -39,19 +41,58 @@ async function readError(res: Response): Promise<string> {
   return `Request failed (${res.status})`
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// Several requests can fail with 401 at the same moment. They must share ONE refresh
+// call: every refresh replaces the refresh token, so a second parallel call would
+// look like a stolen (reused) token to the server.
+let refreshing: Promise<boolean> | null = null
+
+// POST /api/v1/auth/refresh. The browser sends the httpOnly refresh cookie by itself
+// (JavaScript cannot read it). On success we keep the new access token.
+function refreshAccessToken(): Promise<boolean> {
+  if (refreshing === null) {
+    refreshing = (async () => {
+      try {
+        const res = await fetch(`${BASE}/auth/refresh`, { method: "POST" })
+        if (!res.ok) return false
+        const body = (await res.json()) as TokenResponse
+        setToken(body.access_token)
+        return true
+      } catch {
+        return false
+      } finally {
+        refreshing = null
+      }
+    })()
+  }
+  return refreshing
+}
+
+function send(url: string, init: RequestInit | undefined, token: string | null): Promise<Response> {
   // Send the access token on every request: Authorization: Bearer <token>
-  const token = getToken()
   const headers = new Headers(init?.headers)
   if (token) headers.set("Authorization", `Bearer ${token}`)
+  return fetch(url, { ...init, headers })
+}
 
-  const res = await fetch(`${BASE}${path}`, { ...init, headers })
-
-  // The server rejected our token: forget it and tell the app to show the login page.
+// fetch with the token. On a 401 it refreshes once and repeats the request; if the
+// refresh fails too, the session is over: forget the token and show the login page.
+async function authedFetch(path: string, init?: RequestInit): Promise<Response> {
+  const token = getToken()
+  let res = await send(`${BASE}${path}`, init, token)
   if (res.status === 401 && token && path !== "/auth/login") {
-    clearToken()
-    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+    if (await refreshAccessToken()) {
+      res = await send(`${BASE}${path}`, init, getToken())
+    }
+    if (res.status === 401) {
+      clearToken()
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+    }
   }
+  return res
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await authedFetch(path, init)
   if (!res.ok) throw new Error(await readError(res))
   if (res.status === 204) return undefined as T
   return (await res.json()) as T
@@ -169,9 +210,32 @@ export function changeRole(id: number, role: Role): Promise<UserDetail> {
 
 // ---- Logout, profile and password ----
 
-// POST /api/v1/auth/logout (records the logout in the activity log)
-export function logoutRequest(): Promise<void> {
-  return request<void>("/auth/logout", { method: "POST" })
+// POST /api/v1/auth/logout. The server closes this login session (the refresh cookie
+// identifies it) and removes the cookie. No access token is needed.
+export async function logoutRequest(): Promise<void> {
+  await fetch(`${BASE}/auth/logout`, { method: "POST" })
+}
+
+// ---- Sessions (the devices where I am logged in) ----
+
+// GET /api/v1/auth/sessions
+export function listSessions(): Promise<SessionInfo[]> {
+  return request<SessionInfo[]>("/auth/sessions")
+}
+
+// DELETE /api/v1/auth/sessions/{id}
+export function revokeSession(id: number): Promise<void> {
+  return request<void>(`/auth/sessions/${id}`, { method: "DELETE" })
+}
+
+// GET /api/v1/admin/users/{id}/overview
+export function getUserOverview(id: number): Promise<UserOverview> {
+  return request<UserOverview>(`/admin/users/${id}/overview`)
+}
+
+// POST /api/v1/admin/users/{id}/revoke-sessions
+export function revokeUserSessions(id: number): Promise<BulkResult> {
+  return request<BulkResult>(`/admin/users/${id}/revoke-sessions`, { method: "POST" })
 }
 
 // PATCH /api/v1/auth/me
@@ -257,11 +321,8 @@ export async function downloadCsv(
   params: Record<string, string>,
   filename: string,
 ): Promise<void> {
-  const token = getToken()
   const query = new URLSearchParams(params)
-  const res = await fetch(`${BASE}${path}?${query}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
+  const res = await authedFetch(`${path}?${query}`)
   if (!res.ok) throw new Error(await readError(res))
   const url = URL.createObjectURL(await res.blob())
   const link = document.createElement("a")

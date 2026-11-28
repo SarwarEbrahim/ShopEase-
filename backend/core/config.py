@@ -9,6 +9,10 @@ import os
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_MINUTES = int(os.getenv("ACCESS_TOKEN_MINUTES", "15"))
+# The refresh token is a long random string kept in an httpOnly cookie.
+REFRESH_TOKEN_DAYS = int(os.getenv("REFRESH_TOKEN_DAYS", "7"))
+# The cookie is marked Secure (https only) in production. Locally (http) it cannot be.
+COOKIE_SECURE = bool(os.getenv("DATABASE_URL"))
 
 
 def _secret(name: str, dev_default: str) -> str:

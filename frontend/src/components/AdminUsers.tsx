@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from "react"
 import { banUser, bulkBan, bulkUnban, changeRole, downloadCsv, listUsers, unbanUser } from "../api"
 import { useAuth } from "../AuthContext"
 import type { Role, User, UserList } from "../types"
+import UserDetailPanel from "./UserDetailPanel"
 
 const PAGE_SIZE = 10
 
@@ -24,6 +25,9 @@ export default function AdminUsers() {
   const [selected, setSelected] = useState<number[]>([])
   const [bulkReason, setBulkReason] = useState("")
   const [info, setInfo] = useState("")
+
+  // The user whose detail panel (sessions and recent activity) is open.
+  const [detailId, setDetailId] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -162,6 +166,8 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {detailId !== null && <UserDetailPanel userId={detailId} onClose={() => setDetailId(null)} />}
+
       {info && <p className="success">{info}</p>}
       {error && <p className="error">{error}</p>}
       {loading && <p>Loading...</p>}
@@ -206,6 +212,9 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td className="actions">
+                    <button type="button" onClick={() => setDetailId(u.id)}>
+                      Details
+                    </button>
                     {/* Same rules as the server: no actions on yourself, no banning admins. */}
                     {!isMe && (
                       <button type="button" onClick={() => run(() => changeRole(u.id, nextRole))}>

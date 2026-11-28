@@ -74,3 +74,14 @@ def count_failures_since(session: Session, since: datetime) -> int:
         .where(col(AuditLog.created_at) >= since)
     )
     return session.exec(statement).one()
+
+
+def recent_for_user(session: Session, user_id: int, username: str, limit: int) -> list[AuditLog]:
+    """The latest events done by this user, or tried against this username."""
+    statement = (
+        select(AuditLog)
+        .where(or_(col(AuditLog.user_id) == user_id, col(AuditLog.username) == username))
+        .order_by(col(AuditLog.id).desc())
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())

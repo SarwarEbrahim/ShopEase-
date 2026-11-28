@@ -18,6 +18,9 @@ UNBAN = "unban"
 PRODUCT_DELETE = "product_delete"
 GROUP_DELETE = "group_delete"
 EXPORT = "export"
+TOKEN_REFRESH = "token_refresh"
+REFRESH_REUSE = "refresh_reuse"  # an old refresh token was used again
+SESSION_REVOKE = "session_revoke"
 
 
 class AuditLog(SQLModel, table=True):

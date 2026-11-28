@@ -157,3 +157,23 @@ export type AdminGroupList = {
   page: number
   page_size: number
 }
+
+// One login (one device). `current` marks the session this browser is using.
+export type SessionInfo = {
+  id: number
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+  last_used_at: string
+  expires_at: string
+  current: boolean
+}
+
+// Admin user detail: profile, open sessions, latest activity and record counts.
+export type UserOverview = {
+  user: UserDetail
+  sessions: SessionInfo[]
+  recent_activity: AuditEntry[]
+  product_count: number
+  group_count: number
+}

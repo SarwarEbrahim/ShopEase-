@@ -21,9 +21,18 @@ from features.admin.schemas import (
     StatsResponse,
     UserDetail,
     UserListResponse,
+    UserOverview,
 )
 from features.audit import service as audit
-from features.audit.models import BAN, EXPORT, GROUP_DELETE, PRODUCT_DELETE, ROLE_CHANGE, UNBAN
+from features.audit.models import (
+    BAN,
+    EXPORT,
+    GROUP_DELETE,
+    PRODUCT_DELETE,
+    ROLE_CHANGE,
+    SESSION_REVOKE,
+    UNBAN,
+)
 from features.auth.dependencies import AdminUser
 from features.auth.schemas import UserRead
 
@@ -92,6 +101,21 @@ def bulk_unban(data: IdsRequest, request: Request, admin: AdminUser, session: Se
 @router.get("/users/{user_id}", response_model=UserDetail)
 def get_user(user_id: int, admin: AdminUser, session: SessionDep):
     return service.get_user(session, user_id)
+
+
+@router.get("/users/{user_id}/overview", response_model=UserOverview)
+def user_overview(user_id: int, admin: AdminUser, session: SessionDep):
+    """User detail: profile, open sessions, latest activity, record counts."""
+    return service.user_overview(session, user_id)
+
+
+@router.post("/users/{user_id}/revoke-sessions", response_model=BulkResult)
+def revoke_user_sessions(
+    user_id: int, request: Request, admin: AdminUser, session: SessionDep
+):
+    count = service.revoke_user_sessions(session, user_id)
+    audit.record(session, SESSION_REVOKE, request, user=admin, detail=f"target_id={user_id} count={count}")
+    return BulkResult(updated=count, skipped=0)
 
 
 @router.post("/users/{user_id}/ban", response_model=UserDetail)

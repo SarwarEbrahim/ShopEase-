@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react"
 import { changePassword, updateProfile } from "../api"
 import { useAuth } from "../AuthContext"
+import SessionsList from "./SessionsList"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -79,6 +80,8 @@ export default function ProfilePage() {
         {pwMsg && <p className="success">{pwMsg}</p>}
         <button type="submit">Change password</button>
       </form>
+
+      <SessionsList />
     </section>
   )
 }
